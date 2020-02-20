@@ -32,6 +32,7 @@
 
 #include "../src/openvslam/absolute/transform.h"
 #include "../src/openvslam/absolute/image.h"
+#include "../src/openvslam/absolute/trajectory.h"
 
 
 void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
@@ -49,6 +50,7 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
     SLAM.disable_loop_detector();
     // startup the SLAM process
     SLAM.startup();
+    Trajectory trajectory;
 
 #ifdef USE_PANGOLIN_VIEWER
     pangolin_viewer::viewer viewer(cfg, &SLAM, SLAM.get_frame_publisher(), SLAM.get_map_publisher());
@@ -85,7 +87,8 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
                 //  TF T_co(r_co, t_co);
         
                 // }
- 
+                trajectory.AddSlamPose(query_image);
+
 
             }
             if(SLAM.is_lost()){
@@ -141,7 +144,7 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
     // shutdown the SLAM process
     SLAM.shutdown();
 
-    if (true) {
+    if (eval_log) {
         // output the trajectories for evaluation
         SLAM.save_frame_trajectory("frame_trajectory.txt", "TUM");
         SLAM.save_keyframe_trajectory("keyframe_trajectory.txt", "TUM");
