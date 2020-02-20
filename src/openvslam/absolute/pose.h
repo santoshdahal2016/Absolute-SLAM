@@ -24,8 +24,7 @@ public:
   void Print(std::ostream& out) const;
 
   // Factory
-  friend Pose CreateSlamPose(TF reference_T_co, TF current_T_co, timestamp_t time);
-  friend Pose CreateReferencePose(TF T_co, timestamp_t time);
+  friend Pose CreateSlamPose(TF current_T_co, timestamp_t time);
   friend Pose CreateNonePose(timestamp_t time);
 
 private:
@@ -44,8 +43,7 @@ private:
 
 // Factories
 
-Pose CreateSlamPose(TF reference_T_co, TF current_T_co, timestamp_t time);
-Pose CreateReferencePose(TF T_cn, TF T_co , timestamp_t time);
+Pose CreateSlamPose(TF current_T_co, timestamp_t time);
 Pose CreateNonePose(timestamp_t time);
 
 // Print
