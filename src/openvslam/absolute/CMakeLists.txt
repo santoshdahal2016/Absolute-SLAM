@@ -8,6 +8,8 @@ target_sources(${PROJECT_NAME}
                ${CMAKE_CURRENT_SOURCE_DIR}/typedefs.h
                ${CMAKE_CURRENT_SOURCE_DIR}/pose.h
                ${CMAKE_CURRENT_SOURCE_DIR}/trajectory.h
+               ${CMAKE_CURRENT_SOURCE_DIR}/filesystem.h
+               ${CMAKE_CURRENT_SOURCE_DIR}/result_logger.h
 
                ${CMAKE_CURRENT_SOURCE_DIR}/string_manip.cpp
                ${CMAKE_CURRENT_SOURCE_DIR}/transform.cpp
@@ -15,6 +17,8 @@ target_sources(${PROJECT_NAME}
                ${CMAKE_CURRENT_SOURCE_DIR}/typedefs.cpp
                ${CMAKE_CURRENT_SOURCE_DIR}/pose.cpp
                ${CMAKE_CURRENT_SOURCE_DIR}/trajectory.cpp
+               ${CMAKE_CURRENT_SOURCE_DIR}/filesystem.cpp
+               ${CMAKE_CURRENT_SOURCE_DIR}/result_logger.cpp
 
                )
 

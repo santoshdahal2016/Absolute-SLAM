@@ -78,6 +78,8 @@ find_package(Eigen3 3.3 REQUIRED)
 # yaml-cpp
 find_package(yaml-cpp REQUIRED)
 
+find_package(Boost 1.55.0 REQUIRED COMPONENTS system filesystem)
+
 # OpenCV
 find_package(OpenCV 3.3.1 QUIET
              COMPONENTS

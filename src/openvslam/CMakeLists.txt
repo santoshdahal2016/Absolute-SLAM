@@ -123,7 +123,9 @@ target_include_directories(${PROJECT_NAME}
                            $<INSTALL_INTERFACE:include/openvslam/3rd/json/include>
                            $<INSTALL_INTERFACE:include/openvslam/3rd/spdlog/include>
                            $<INSTALL_INTERFACE:${BoW_INCLUDE_DIR}>
-                           $<INSTALL_INTERFACE:include/>)
+                           $<INSTALL_INTERFACE:include/>
+                           ${Boost_INCLUDE_DIRS}
+                           )
 
 # Link to required libraries
 target_link_libraries(${PROJECT_NAME}
@@ -146,7 +148,9 @@ target_link_libraries(${PROJECT_NAME}
                       ${SUITESPARSE_LIBRARIES}
                       ${BoW_LIBRARY}
                       PRIVATE
-                      ${LAPACK_LIBRARIES})
+                      ${LAPACK_LIBRARIES}
+                      ${Boost_LIBRARIES}
+                      )
 
 # ----- Install configuration -----
 
