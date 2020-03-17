@@ -35,6 +35,33 @@ endif()
 
 set(EXECUTABLE_TARGETS "")
 
+
+find_package(OpenGL REQUIRED)
+add_definitions(${OPENGL_DEFINITIONS})
+find_package(X11 REQUIRED)
+
+include_directories(${PROJECT_SOURCE_DIR}/3rd)
+
+set(LIBS ${GLFW3_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread ${ASSIMP_LIBRARY})
+
+
+# first create relevant static libraries requried for other projects
+add_library(STB_IMAGE ${PROJECT_SOURCE_DIR}/3rd/stb_image.cpp)
+set(LIBS  ${LIBS} STB_IMAGE)
+
+add_library(GLAD ${PROJECT_SOURCE_DIR}/3rd/glad.c)
+set(LIBS  ${LIBS} GLAD)
+
+
+add_executable(render_model render.cpp)
+list(APPEND EXECUTABLE_TARGETS render_model)
+
+
+add_executable(ar ar.cpp)
+list(APPEND EXECUTABLE_TARGETS ar)
+
+
+
 add_executable(run_camera_slam run_camera_slam.cc)
 list(APPEND EXECUTABLE_TARGETS run_camera_slam)
 
@@ -100,7 +127,9 @@ foreach(EXECUTABLE_TARGET IN LISTS EXECUTABLE_TARGETS)
                           PRIVATE
                           ${PROJECT_NAME}
                           opencv_imgcodecs
-                          opencv_videoio)
+                          opencv_videoio
+            ${LIBS}
+            )
 
     # include popl and spdlog headers
     target_include_directories(${EXECUTABLE_TARGET}

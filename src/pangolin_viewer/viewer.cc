@@ -184,7 +184,14 @@ void viewer::draw_horizontal_grid() {
 
 pangolin::OpenGlMatrix viewer::get_current_cam_pose() {
     const auto cam_pose_cw = map_publisher_->get_current_cam_pose();
+    std::cout<<"OPENVSLAM"<<std::endl;
+
+    std::cout<<" Translation :" << cam_pose_cw.block<3,1>(0,3)<<std::endl;
     const pangolin::OpenGlMatrix gl_cam_pose_wc(cam_pose_cw.inverse().eval());
+    std::cout<<"OpenGL Matrix"<<std::endl;
+
+    std::cout<<gl_cam_pose_wc<<std::endl;
+
     return gl_cam_pose_wc;
 }
 

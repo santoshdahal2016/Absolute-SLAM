@@ -35,6 +35,7 @@
 #include "../src/openvslam/absolute/trajectory.h"
 
 
+
 void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
                    const std::string& vocab_file_path, const std::string& image_dir_path, const std::string& mask_img_path,
                    const unsigned int frame_skip, const bool no_sleep, const bool auto_term,
@@ -47,7 +48,7 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
 
     // build a SLAM system
     openvslam::system SLAM(cfg, vocab_file_path);
-    SLAM.disable_loop_detector();
+//    SLAM.disable_loop_detector();
     // startup the SLAM process
     SLAM.startup();
     Trajectory trajectory;
@@ -91,9 +92,9 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
 
 
             }
-            if(SLAM.is_lost()){
-                SLAM.request_reset();
-            }
+//            if(SLAM.is_lost()){
+//                SLAM.request_reset();
+//            }
             const auto tp_2 = std::chrono::steady_clock::now();
 
             const auto track_time = std::chrono::duration_cast<std::chrono::duration<double>>(tp_2 - tp_1).count();
