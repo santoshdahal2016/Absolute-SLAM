@@ -16,9 +16,14 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
+#include <openvslam/absolute/transform_interface.h>
 
 #include "openvslam/system.h"
 #include "openvslam/config.h"
+#include "openvslam/publish/frame_publisher.h"
+
+#include <Eigen/Dense>
+#include <glm/matrix.hpp>
 
 using namespace cv;
 
@@ -30,11 +35,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
 // settings
-const unsigned int SCR_WIDTH = 1600;
-const unsigned int SCR_HEIGHT = 1000;
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 960;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 55.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -43,12 +48,45 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+template<typename T, int m, int n>
+inline glm::mat<m, n, float, glm::precision::highp> E2GLM(const Eigen::Matrix<T, m, n>& em)
+{
+    glm::mat<m, n, float, glm::precision::highp> mat;
+    for (int i = 0; i < m; ++i)
+    {
+        for (int j = 0; j < n; ++j)
+        {
+            mat[j][i] = em(i, j);
+        }
+    }
+    return mat;
+}
+
 int main()
 {
 
-    cv::Mat frame;
+    auto config_file_path =  "/home/santosh/Projects/openvslam/example/tum_rgbd/TUM_RGBD_mono_3.yaml" ;
+    std::shared_ptr<openvslam::config> cfg = std::make_shared<openvslam::config>(config_file_path);
+    cout<< "-> [Absolute Slam] Initialize Openvslam.: cfg shared pointer created" << endl;
 
-    cv::VideoCapture cap(0);
+
+    cout<< "-> [Absolute Slam] Initialize Openvslam.: Finish Loading Config file" << endl;
+
+    openvslam::system SLAM(cfg, "/home/santosh/Projects/openvslam/build/orb_vocab/orb_vocab.dbow2");
+
+    // ORB_SLAM2::System orb_slam_system(opts.orb_slam_opts.vocabulary_path, opts.orb_slam_opts.configfile_path, ORB_SLAM2::System::MONOCULAR, opts.orb_slam_opts.use_viewer);
+    cout << endl << "-> [Absolute Slam] Shut down loop closure." << endl;
+
+    SLAM.disable_loop_detector();
+
+    // don't use orbslam loopclosure technique
+    // orb_slam_system.ShutDownLoopClosure();
+    SLAM.startup();
+
+    cv::Mat frame;
+    double timestamp = 0.0;
+
+    cv::VideoCapture cap(2);
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -91,46 +129,53 @@ int main()
 
     // build and compile shaders
     // -------------------------
-    Shader shader("../resource/shaders/model_vertex.glsl", "../resource/shaders/model_fragment.glsl");
+//    Shader shader("../resource/shaders/model_vertex.glsl", "../resource/shaders/model_fragment.glsl");
     Shader bg_shader("../resource/shaders/bg_vertex_shader.glsl", "../resource/shaders/bg_fragment_shader.glsl");
+
+
+    Shader basic_shader("../resource/shaders/basic_vertex.glsl", "../resource/shaders/basic_fragment.glsl");
 
     // load models
     // -----------
-    Model rock("../resource/model/rock.obj");
-    Model planet("../resource/model/planet.obj");
+//    Model rock("../resource/model/rock.obj");
+
+
+    Model layout("../resource/model/map.obj");
+
+//    Model planet("../resource/model/planet.obj");
 
     // generate a large list of semi-random model transformation matrices
     // ------------------------------------------------------------------
-    unsigned int amount = 1000;
-    glm::mat4* modelMatrices;
-    modelMatrices = new glm::mat4[amount];
-    srand(glfwGetTime()); // initialize random seed
-    float radius = 50.0;
-    float offset = 2.5f;
-    for (unsigned int i = 0; i < amount; i++)
-    {
-        glm::mat4 model = glm::mat4(1.0f);
-        // 1. translation: displace along circle with 'radius' in range [-offset, offset]
-        float angle = (float)i / (float)amount * 360.0f;
-        float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float x = sin(angle) * radius + displacement;
-        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
-        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float z = cos(angle) * radius + displacement;
-        model = glm::translate(model, glm::vec3(x, y, z));
-
-        // 2. scale: Scale between 0.05 and 0.25f
-        float scale = (rand() % 20) / 100.0f + 0.05;
-        model = glm::scale(model, glm::vec3(scale));
-
-        // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-        float rotAngle = (rand() % 360);
-        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
-
-        // 4. now add to list of matrices
-        modelMatrices[i] = model;
-    }
+//    unsigned int amount = 1000;
+//    glm::mat4* modelMatrices;
+//    modelMatrices = new glm::mat4[amount];
+//    srand(glfwGetTime()); // initialize random seed
+//    float radius = 50.0;
+//    float offset = 2.5f;
+//    for (unsigned int i = 0; i < amount; i++)
+//    {
+//        glm::mat4 model = glm::mat4(1.0f);
+//        // 1. translation: displace along circle with 'radius' in range [-offset, offset]
+//        float angle = (float)i / (float)amount * 360.0f;
+//        float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+//        float x = sin(angle) * radius + displacement;
+//        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+//        float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
+//        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+//        float z = cos(angle) * radius + displacement;
+//        model = glm::translate(model, glm::vec3(x, y, z));
+//
+//        // 2. scale: Scale between 0.05 and 0.25f
+//        float scale = (rand() % 20) / 100.0f + 0.05;
+//        model = glm::scale(model, glm::vec3(scale));
+//
+//        // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
+//        float rotAngle = (rand() % 360);
+//        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+//
+//        // 4. now add to list of matrices
+//        modelMatrices[i] = model;
+//    }
 
     // background object definitions
     GLfloat vertices_bg[] =
@@ -206,12 +251,28 @@ int main()
     modelview_bg = glm::scale(modelview_bg, glm::vec3(998*cx/fx, 998*cy/fy, 0));
 
 
+    glm::mat4 modelLayout = glm::mat4(1.0f);
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
     {
 
         cap >> frame;
+
+        const auto tp_1 = std::chrono::steady_clock::now();
+
+        openvslam::Mat44_t cam_pose = SLAM.feed_monocular_frame(frame, timestamp, cv::Mat{});
+
+        modelLayout = E2GLM(cam_pose);
+
+        RotMat_t r_co = cam_pose.block<3,3>(0,0);
+        Translation_t t_co = cam_pose.block<3,1>(0, 3);
+
+//        cout<<t_co<<endl;
+
+        timestamp += 1.0 / cfg->camera_->fps_;
+
         // per-frame time logic
         // --------------------
         float currentFrame = glfwGetTime();
@@ -238,7 +299,7 @@ int main()
         glBindVertexArray(VAO_bg);
 
         glActiveTexture(GL_TEXTURE2);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.cols, frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, frame.data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.cols, frame.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, SLAM.get_frame_publisher()->draw_frame().data);
         glBindTexture(GL_TEXTURE_2D, texture_bg);
 
         glUniform1i(glGetUniformLocation(bg_shader.ID, "webcam_texture"), 2);
@@ -250,31 +311,47 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
+//
+//        shader.use();
+//        shader.setMat4("projection", projection);
+//        shader.setMat4("view", view);
+//
+//        // draw planet
+//        glm::mat4 model = glm::mat4(1.0f);
+//        model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
+//        model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
+//        shader.setMat4("model", model);
+//        planet.Draw(shader);
+//
+//        // draw meteorites
+//        for (unsigned int i = 0; i < amount; i++)
+//        {
+//            shader.setMat4("model", modelMatrices[i]);
+//            rock.Draw(shader);
+//        }
+//
 
-        shader.use();
-        shader.setMat4("projection", projection);
-        shader.setMat4("view", view);
+
+        basic_shader.use();
+        basic_shader.setMat4("projection", projection);
+        basic_shader.setMat4("view", view);
+
+        basic_shader.setVec3("objectColor", 0.0f, 1.0f, 0.0f);
+        basic_shader.setVec3("lightColor",  1.0f, 1.0f, 1.0f);
+        basic_shader.setVec3("lightPos", 0, 0.0f, 3);
+        basic_shader.setVec3("viewPos", camera.Position);
+
 
         // draw planet
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
-        shader.setMat4("model", model);
-        planet.Draw(shader);
-
-        // draw meteorites
-        for (unsigned int i = 0; i < amount; i++)
-        {
-            shader.setMat4("model", modelMatrices[i]);
-            rock.Draw(shader);
-        }
-
+        basic_shader.setMat4("model", modelLayout);
+        layout.Draw(basic_shader);
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
+        // ---------------------------------------------------  ----------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
+    SLAM.shutdown();
     glfwTerminate();
     return 0;
 }
